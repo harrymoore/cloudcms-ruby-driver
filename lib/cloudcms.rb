@@ -1,5 +1,6 @@
 require "cloudcms/version"
 require 'platform'
+require 'repository'
 
 # ENV['OAUTH_DEBUG'] = 'true'
 

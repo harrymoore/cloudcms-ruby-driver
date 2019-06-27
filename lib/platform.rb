@@ -1,5 +1,6 @@
 require 'oauth2'
 require 'json'
+require 'branch'
 
 # ENV['OAUTH_DEBUG'] = 'true'
 
@@ -9,9 +10,9 @@ module Cloudcms
         attr_accessor :data
         attr_accessor :project
         attr_accessor :repository
-        attr_accessor :brachesByTitle
-        attr_accessor :brachesById
-        attr_accessor :braches
+        attr_accessor :branchesByTitle
+        attr_accessor :branchesById
+        attr_accessor :branches
         attr_accessor :master
 
         def initialize(driver, data)
@@ -66,39 +67,15 @@ module Cloudcms
             
             # read 'content' repository for the project
             response = @driver.connection.request :get, @driver.config['baseURL'] + "/repositories/" + contentRepositoryId
-            @repository = response.parsed
+            @repository = Repository.new(@driver, self, @project, response.parsed)
             # puts 'repository: ' + JSON.pretty_generate(repository)
-            
-            # list branches
-            response = @driver.connection.request :get, @driver.config['baseURL'] + "/repositories/" + contentRepositoryId + "/branches"
-            branchIds = response.parsed
-            # puts 'branchIds: ' + JSON.pretty_generate(branchIds)
-            
-            # read all the branches
-            @brachesByTitle = Hash.new
-            @brachesById = Hash.new
-            @braches= Array.new
-            i = 0
-            while i < branchIds['rows'].length
-                response = @driver.connection.request :get, @driver.config['baseURL'] + "/repositories/" + contentRepositoryId + "/branches/" + branchIds['rows'][i]['_doc']
-                branch = response.parsed
-                @brachesByTitle[branch['title']] = branch
-                @brachesById[branch['_doc']] = branch
-                @braches.push(branch)
-                i += 1
-                # puts 'branch: ' + JSON.pretty_generate(branch)
-            end
-            @master = brachesByTitle['master']
-            # puts 'brachesByTitle: ' + JSON.pretty_generate(brachesByTitle)
-            # puts 'brachesById: ' + JSON.pretty_generate(brachesById)
-            # puts 'braches: ' + JSON.pretty_generate(braches)
 
             return self
         end
 
         def read_repository(id)
-            response = @driver.request :get, @driver.config['baseURL'] + "/repository/#{id}?metadata=true&full=true"
-            @platform = Platform.new(self, response.parsed)
+            response = @driver.request :get, @driver.config['baseURL'] + "/repositories/#{id}?metadata=true&full=true"
+            return Repository.new(@driver, self, @project, response.parsed)
         end
     end
 end
