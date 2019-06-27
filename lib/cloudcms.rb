@@ -1,5 +1,4 @@
 require "cloudcms/version"
-# require 'driver'
 require 'platform'
 
 # ENV['OAUTH_DEBUG'] = 'true'
@@ -17,7 +16,6 @@ module Cloudcms
         end
 
         def connect(path="./gitana.json")
-            # @driver = Driver.new()
             # read gitana connection info
             @config = JSON.parse(File.read(path))
             @config['requestedScope'] = 'api'
@@ -43,12 +41,12 @@ module Cloudcms
             
                 # read platform
                 response = @connection.request :get, @config['baseURL'] + "/?metadata=true&full=true"
-                platform = response.parsed
-                # puts 'platform: ' + JSON.pretty_generate(platform)
+                @platform = Platform.new(self, response.parsed)
+                # puts 'platform: ' + JSON.pretty_generate(@platform)
 
-                platform.driver = self
-            rescue
-                "Error connecting"
+                return @platform
+            # rescue
+            #     "Error connecting"
             end
         end
     end
