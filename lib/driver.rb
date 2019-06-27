@@ -1,23 +1,16 @@
-require "cloudcms/version"
-# require 'driver'
-require 'platform'
+require 'oauth2'
+require 'json'
 
 # ENV['OAUTH_DEBUG'] = 'true'
 
 module Cloudcms
-    class Error < StandardError; end
-
-    # Driver
-    class Cloudcms
+    class Driver
         attr_accessor :config
-        attr_accessor :connection
-        attr_accessor :platform
 
         def initialize
         end
 
         def connect(path="./gitana.json")
-            # @driver = Driver.new()
             # read gitana connection info
             @config = JSON.parse(File.read(path))
             @config['requestedScope'] = 'api'
@@ -35,20 +28,20 @@ module Cloudcms
                 )
 
                 client.auth_code.authorize_url()
-                @connection = client.password.get_token(@config['username'], @config['password'])
-                puts 'Authentication token: ' + @connection.token + ' expires in: ' + @connection.expires_in.to_s + ' seconds'
+                connection = client.password.get_token(@config['username'], @config['password'])
+                puts 'Authentication token: ' + connection.token + ' expires in: ' + connection.expires_in.to_s + ' seconds'
             
-                response = @connection.request :get, @config['baseURL'] + "/auth/info"
+                response = connection.request :get, @config['baseURL'] + "/auth/info"
                 puts 'Connected to tenant: ' + response.parsed['tenantTitle'] + ' as user: ' + response.parsed['user']['name']
             
                 # read platform
-                response = @connection.request :get, @config['baseURL'] + "/?metadata=true&full=true"
-                platform = response.parsed
-                # puts 'platform: ' + JSON.pretty_generate(platform)
+                response = connection.request :get, @config['baseURL'] + "/?metadata=true&full=true"
+                platformJSON = response.parsed
+                # puts 'platform: ' + JSON.pretty_generate(platformJSON)
+                platform = Platform.new(platformJSON)
 
                 platform.driver = self
-            rescue
-                "Error connecting"
+                platform
             end
         end
     end
