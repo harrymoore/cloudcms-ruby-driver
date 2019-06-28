@@ -45,7 +45,7 @@ module Cloudcms
             response = @driver.connection.request :get, @driver.config['baseURL'] + "/repositories/#{@data['_doc']}/branches?metadata=true&full=true"
             i = 0
             while i < response.parsed['rows'].length
-                branch = Branch.new(@driver, self, @project, @repository, response.parsed['rows'][i])
+                branch = Branch.new(@driver, @platform, @project, self, response.parsed['rows'][i])
                 branches.push(branch)
                 i += 1
             end
@@ -54,7 +54,7 @@ module Cloudcms
 
         def read_branch(id)
             response = @driver.connection.request :get, @driver.config['baseURL'] + "/repositories/#{@data['_doc']}/branches/#{id}?metadata=true&full=true"
-            return Branch.new(@driver, self, @project, @repository, response.parsed)
+            return Branch.new(@driver, @platform, @project, self, response.parsed)
         end
     end
 end

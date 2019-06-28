@@ -1,3 +1,5 @@
+require 'node'
+
 module Cloudcms
     class Branch
         attr_accessor :driver
@@ -20,9 +22,25 @@ module Cloudcms
             return self
         end
 
+        def query_nodes(query, pagination={'skip': 0, 'limit': 25})
+            skip = pagination.fetch(:skip)
+            limit = pagination.fetch(:limit)
+
+            nodes = Array.new
+            response = @driver.connection.request :post, @driver.config['baseURL'] + "/repositories/#{@repository.data['_doc']}/branches/#{@data['_doc']}/nodes/query?metadata=true&full=true&skip=#{skip}&limit=#{limit}", 
+                :headers => {'Content-Type': 'application/json'}, 
+                :body => query.to_json
+            i = 0
+            while i < response.parsed['rows'].length
+                nodes.push(response.parsed['rows'][i])
+                i += 1
+            end
+            return nodes
+        end
+
         def read_node(id)
-            response = @driver.request :get, @driver.config['baseURL'] + "/repository/#{id}?metadata=true&full=true"
-            @platform = Platform.new(self, response.parsed)
+            response = @driver.connection.request :get, @driver.config['baseURL'] + "/repositories/#{@repository.data['_doc']}/branches/#{@data['_doc']}/nodes/#{id}?metadata=true&full=true"
+            return Node.new(@driver, @platform, @project, @repository, self, response.parsed)
         end
     end
 end
