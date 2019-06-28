@@ -20,7 +20,7 @@ module Cloudcms
             return self
         end
 
-        def read_repository(id)
+        def read_node(id)
             response = @driver.request :get, @driver.config['baseURL'] + "/repository/#{id}?metadata=true&full=true"
             @platform = Platform.new(self, response.parsed)
         end

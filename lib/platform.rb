@@ -73,9 +73,22 @@ module Cloudcms
             return self
         end
 
+        def list_repositories()
+            repositories = Array.new
+            response = @driver.connection.request :get, @driver.config['baseURL'] + "/repositories?metadata=true&full=true"
+            i = 0
+            while i < response.parsed['rows'].length
+                repository = Repository.new(@driver, self, @project, response.parsed['rows'][i])
+                repositories.push(repository)
+                i += 1
+            end
+            return repositories
+        end
+
         def read_repository(id)
-            response = @driver.request :get, @driver.config['baseURL'] + "/repositories/#{id}?metadata=true&full=true"
+            response = @driver.connection.request :get, @driver.config['baseURL'] + "/repositories/#{id}?metadata=true&full=true"
             return Repository.new(@driver, self, @project, response.parsed)
         end
+
     end
 end
