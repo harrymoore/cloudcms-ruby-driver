@@ -22,10 +22,7 @@ module Cloudcms
             return self
         end
 
-        def query_nodes(query, pagination={'skip': 0, 'limit': 25})
-            skip = pagination.fetch(:skip)
-            limit = pagination.fetch(:limit)
-
+        def query_nodes(query = {}, skip = 0, limit = 25)
             nodes = Array.new
             response = @driver.connection.request :post, @driver.config['baseURL'] + "/repositories/#{@repository.data['_doc']}/branches/#{@data['_doc']}/nodes/query?metadata=true&full=true&skip=#{skip}&limit=#{limit}", 
                 :headers => {'Content-Type': 'application/json'}, 
@@ -40,6 +37,14 @@ module Cloudcms
 
         def read_node(id)
             response = @driver.connection.request :get, @driver.config['baseURL'] + "/repositories/#{@repository.data['_doc']}/branches/#{@data['_doc']}/nodes/#{id}?metadata=true&full=true"
+            return Node.new(@driver, @platform, @project, @repository, self, response.parsed)
+        end
+
+        def create_node(json_objec)
+            response = @driver.connection.request :post, @driver.config['baseURL'] + "/repositories/#{@repository.data['_doc']}/branches/#{@data['_doc']}/nodes", 
+                :headers => {'Content-Type': 'application/json'}, 
+                :body => json_objec.to_json
+
             return Node.new(@driver, @platform, @project, @repository, self, response.parsed)
         end
     end

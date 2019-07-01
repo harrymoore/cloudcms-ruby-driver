@@ -18,16 +18,22 @@ module Cloudcms
             return self
         end
 
+        def reload()
+            response = @driver.connection.request :get, @driver.config['baseURL'] + "/repositories/#{@repository.data['_doc']}/branches/#{@data['_doc']}/nodes/#{id}?metadata=true&full=true"
+            @data = response.parsed
+            return self
+        end
+
         def update()
-            # TODO
+            response = @driver.connection.request :put, @driver.config['baseURL'] + "/repositories/#{@repository.data['_doc']}/branches/#{@branch.data['_doc']}/nodes/#{@data['_doc']}", 
+                :headers => {'Content-Type': 'application/json'}, 
+                :body => @data.to_json
+            return self
         end
 
         def delete()
-            # TODO
-        end
-
-        def update()
-            # TODO
+            response = @driver.connection.request :delete, @driver.config['baseURL'] + "/repositories/#{@repository.data['_doc']}/branches/#{@branch.data['_doc']}/nodes/#{@data['_doc']}"
+            return
         end
     end
 end
