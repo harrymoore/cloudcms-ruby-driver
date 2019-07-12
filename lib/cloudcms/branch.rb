@@ -1,4 +1,4 @@
-require 'node'
+require 'cloudcms/node'
 
 module Cloudcms
     class Branch

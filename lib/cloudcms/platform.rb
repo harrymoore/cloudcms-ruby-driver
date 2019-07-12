@@ -1,6 +1,6 @@
 require 'oauth2'
 require 'json'
-require 'branch'
+require 'cloudcms/branch'
 
 # ENV['OAUTH_DEBUG'] = 'true'
 
@@ -14,6 +14,9 @@ module Cloudcms
         attr_accessor :branchesById
         attr_accessor :branches
         attr_accessor :master
+        attr_accessor :stack
+        attr_accessor :datastores
+        attr_accessor :application
 
         def initialize(driver, data)
             @driver = driver
@@ -24,37 +27,39 @@ module Cloudcms
 
             # read application
             response = @driver.connection.request :get, @driver.config['baseURL'] + "/applications/" + @driver.config['application'] + "?metadata=true&full=true"
-            application = response.parsed
-            # puts 'application: ' + JSON.pretty_generate(application)
+            @application = response.parsed
+            # puts 'application: ' + JSON.pretty_generate(@application)
 
             # find stack by application id
-            response = @driver.connection.request :get, @driver.config['baseURL'] + "/stacks/find/application/" + @driver.config['application'] + "?metadata=true&full=true"
-            stack = response.parsed
-            # puts 'stack: ' + JSON.pretty_generate(stack)
+            response = @driver.connection.request :get, @driver.config['baseURL'] + "/stacks/find/application/" + @application['_doc'] + "?metadata=true&full=true"
+            @stack = response.parsed
+            # puts 'stack: ' + JSON.pretty_generate(@stack)
 
             # read stack's datastores
-            response = @driver.connection.request :get, @driver.config['baseURL'] + "/stacks/" + response.parsed['_doc'] + "/datastores"
-            datastores = response.parsed
+            response = @driver.connection.request :get, @driver.config['baseURL'] + "/stacks/" + stack['_doc'] + "/datastores"
+            @datastores = response.parsed
 
             projectId = ""
             contentRepositoryId = ""
             domainId = ""
             application = ""
             i = 0
-            while i < datastores['rows'].length
-                if (datastores['rows'][i]['_doc'] == @driver.config['application'])
+            while i < @datastores['rows'].length
+                if (@datastores['rows'][i]['_doc'] == @application['_doc'])
                     # this is the application datastore
-                    projectId = datastores['rows'][i]['projectId']
-                    # puts 'rows[i]: ' + JSON.pretty_generate(datastores['rows'][i])
+                    # get the project id
+                    projectId = @datastores['rows'][i]['projectId']
+                    # puts 'rows[i]: ' + JSON.pretty_generate(@datastores['rows'][i])
                 end
 
-                if (datastores['rows'][i]['_doc'] == 'content')
-                    contentRepositoryId = datastores['rows'][i]['datastoreId']
-                    # puts 'rows[i]: ' + JSON.pretty_generate(datastores['rows'][i])
+                if (@datastores['rows'][i]['_doc'] == 'content')
+                    contentRepositoryId = @datastores['rows'][i]['datastoreId']
+                    # puts 'rows[i]: ' + JSON.pretty_generate(@datastores['rows'][i])
                 end
 
-                if (datastores['rows'][i]['_doc'] == 'principals')
-                    domainId = datastores['rows'][i]['defaultDirectoryId']
+                if (@datastores['rows'][i]['_doc'] == 'principals')
+                    #  this is the projects domain
+                    domainId = @datastores['rows'][i]['defaultDirectoryId']
                 end
 
                 i += 1
@@ -65,10 +70,10 @@ module Cloudcms
             @project = response.parsed
             # puts 'project: ' + JSON.pretty_generate(project)
             
-            # read 'content' repository for the project
+            # read 'content' repository for the project containing this application
             response = @driver.connection.request :get, @driver.config['baseURL'] + "/repositories/" + contentRepositoryId
             @repository = Repository.new(@driver, self, @project, response.parsed)
-            # puts 'repository: ' + JSON.pretty_generate(repository)
+            puts 'repository: ' + JSON.pretty_generate(repository)
 
             return self
         end

@@ -1,4 +1,4 @@
-require 'branch'
+require 'cloudcms/branch'
 
 module Cloudcms
     class Repository

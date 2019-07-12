@@ -15,11 +15,13 @@ module Cloudcms
             @repository = repository
             @branch = branch
             
+            self.reload
+            
             return self
         end
 
         def reload()
-            response = @driver.connection.request :get, @driver.config['baseURL'] + "/repositories/#{@repository.data['_doc']}/branches/#{@data['_doc']}/nodes/#{id}?metadata=true&full=true"
+            response = @driver.connection.request :get, @driver.config['baseURL'] + "/repositories/#{@repository.data['_doc']}/branches/#{@branch.data['_doc']}/nodes/#{@data['_doc']}?metadata=true&full=true"
             @data = response.parsed
             return self
         end
