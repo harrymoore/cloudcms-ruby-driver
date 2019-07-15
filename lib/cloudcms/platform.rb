@@ -10,10 +10,6 @@ module Cloudcms
         attr_accessor :data
         attr_accessor :project
         attr_accessor :repository
-        attr_accessor :branchesByTitle
-        attr_accessor :branchesById
-        attr_accessor :branches
-        attr_accessor :master
         attr_accessor :stack
         attr_accessor :datastores
         attr_accessor :application
@@ -35,45 +31,12 @@ module Cloudcms
             @stack = response.parsed
             # puts 'stack: ' + JSON.pretty_generate(@stack)
 
-            # read stack's datastores
-            response = @driver.connection.request :get, @driver.config['baseURL'] + "/stacks/" + stack['_doc'] + "/datastores"
-            @datastores = response.parsed
-
-            projectId = ""
-            contentRepositoryId = ""
-            domainId = ""
-            application = ""
-            i = 0
-            while i < @datastores['rows'].length
-                if (@datastores['rows'][i]['_doc'] == @application['_doc'])
-                    # this is the application datastore
-                    # get the project id
-                    projectId = @datastores['rows'][i]['projectId']
-                    # puts 'rows[i]: ' + JSON.pretty_generate(@datastores['rows'][i])
-                end
-
-                if (@datastores['rows'][i]['_doc'] == 'content')
-                    contentRepositoryId = @datastores['rows'][i]['datastoreId']
-                    # puts 'rows[i]: ' + JSON.pretty_generate(@datastores['rows'][i])
-                end
-
-                if (@datastores['rows'][i]['_doc'] == 'principals')
-                    #  this is the projects domain
-                    domainId = @datastores['rows'][i]['defaultDirectoryId']
-                end
-
-                i += 1
-            end
-            
             # read project
-            response = @driver.connection.request :get, @driver.config['baseURL'] + "/projects/" + projectId
-            @project = response.parsed
+            response = @driver.connection.request :get, @driver.config['baseURL'] + "/projects/" + @application["projectId"]
+            @project = Project.new(@driver, self, @stack, response.parsed)
             # puts 'project: ' + JSON.pretty_generate(project)
-            
-            # read 'content' repository for the project containing this application
-            response = @driver.connection.request :get, @driver.config['baseURL'] + "/repositories/" + contentRepositoryId
-            @repository = Repository.new(@driver, self, @project, response.parsed)
-            puts 'repository: ' + JSON.pretty_generate(repository)
+
+            @repository = @project.repository
 
             return self
         end
@@ -93,6 +56,11 @@ module Cloudcms
         def read_repository(id)
             response = @driver.connection.request :get, @driver.config['baseURL'] + "/repositories/#{id}?metadata=true&full=true"
             return Repository.new(@driver, self, @project, response.parsed)
+        end
+
+        def read_domain(id)
+            response = @driver.connection.request :get, @driver.config['baseURL'] + "/domains/#{id}?metadata=true&full=true"
+            return response.parsed
         end
 
     end

@@ -5,47 +5,43 @@ module Cloudcms
         attr_accessor :driver
         attr_accessor :data
         attr_accessor :platform
-        attr_accessor :project
-        attr_accessor :content_repository
+        attr_accessor :stack
+        attr_accessor :domain
+        attr_accessor :repository
+        attr_accessor :datastores
         attr_accessor :branchesByTitle
         attr_accessor :branchesById
         attr_accessor :branches
         attr_accessor :master
 
-        def initialize(driver, platform, project, repository, data)
+        def initialize(driver, platform, stack, data)
             @driver = driver
             @data = data
             @platform = platform
-            @project = project
-            @repository = repository
+            @stack = stack
             
+            # read datastores from stack
+            response = @driver.connection.request :get, @driver.config['baseURL'] + "/stacks/" + @stack['_doc'] + "/datastores"
+            @datastores = response.parsed
+            # puts '@datastores: ' + JSON.pretty_generate(@datastores)
+
+            i = 0
+            while i < @datastores['rows'].length
+                if (@datastores['rows'][i]['_doc'] == 'content')
+                    @repository = @platform.read_repository(@datastores['rows'][i]['datastoreId'])
+                    # puts '@repository: ' + JSON.pretty_generate(@repository)
+                end
+
+                if (@datastores['rows'][i]['_doc'] == 'principals')
+                    #  this is the projects domain
+                    @domain = @platform.read_domain(@datastores['rows'][i]['datastoreId'])
+                end
+
+                i += 1
+            end
+
             return self
         end
 
-        def query_nodes(query = {}, skip = 0, limit = 25)
-            nodes = Array.new
-            response = @driver.connection.request :post, @driver.config['baseURL'] + "/repositories/#{@repository.data['_doc']}/branches/#{@data['_doc']}/nodes/query?metadata=true&full=true&skip=#{skip}&limit=#{limit}", 
-                :headers => {'Content-Type': 'application/json'}, 
-                :body => query.to_json
-            i = 0
-            while i < response.parsed['rows'].length
-                nodes.push(response.parsed['rows'][i])
-                i += 1
-            end
-            return nodes
-        end
-
-        def read_node(id)
-            response = @driver.connection.request :get, @driver.config['baseURL'] + "/repositories/#{@repository.data['_doc']}/branches/#{@data['_doc']}/nodes/#{id}?metadata=true&full=true"
-            return Node.new(@driver, @platform, @project, @repository, self, response.parsed)
-        end
-
-        def create_node(json_objec)
-            response = @driver.connection.request :post, @driver.config['baseURL'] + "/repositories/#{@repository.data['_doc']}/branches/#{@data['_doc']}/nodes", 
-                :headers => {'Content-Type': 'application/json'}, 
-                :body => json_objec.to_json
-
-            return Node.new(@driver, @platform, @project, @repository, self, response.parsed)
-        end
     end
 end

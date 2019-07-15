@@ -46,6 +46,9 @@ Or install it yourself as:
     puts 'node: ' + JSON.pretty_generate(node.data)
 ```
 
+## Run Test Script
+bundle exec ruby api-call-driver.rb
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
